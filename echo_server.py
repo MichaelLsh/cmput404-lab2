@@ -1,33 +1,57 @@
-#!/usr/bin/env python3
-import socket
-import time
+import socket 
+from threading import Thread
 
-#define address & buffer size
-HOST = ""
-PORT = 8001
-BUFFER_SIZE = 1024
+BYTES_TO_READ = 4096
+HOST = "127.0.0.1"
+PORT = 8080
 
-def main():
+def handle_connection(conn, addr):
+     with conn:
+        print(f"Connected by {addr}")
+        while True:
+            '''
+            recv(bytes) 
+            https://manpages.debian.org/bullseye/manpages-dev/recv.2.en.html
+
+            When a stream socket peer has performed an orderly shutdown, the return value will be 0 (the traditional "end-of-file" return).
+
+            In python 0 is falsey.
+            '''
+            data = conn.recv(BYTES_TO_READ)
+            if not data:
+                break
+            print(data)
+            conn.sendall(data)
+
+# Start single threaded echo server
+def start_server():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    
-        #QUESTION 3
+        s.bind((HOST,PORT))
+
+        '''
+        setsockopt(level, option, value)
+        https://manpages.debian.org/bullseye/manpages-dev/setsockopt.2.en.html
+        '''
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        
-        #bind socket to address
-        s.bind((HOST, PORT))
-        #set to listening mode
-        s.listen(2)
-        
-        #continuously listen for connections
+        s.listen()
+        conn, addr = s.accept()
+        handle_connection(conn, addr)
+
+# Start multithreaded echo server
+def start_threaded_server():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((HOST,PORT))
+
+        '''
+        setsockopt(level, option, value)
+        https://manpages.debian.org/bullseye/manpages-dev/setsockopt.2.en.html
+        '''
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.listen(2) # Allow backlog of up to 2 connections
         while True:
             conn, addr = s.accept()
-            print("Connected by", addr)
-            
-            #recieve data, wait a bit, then send it back
-            full_data = conn.recv(BUFFER_SIZE)
-            time.sleep(0.5)
-            conn.sendall(full_data)
-            conn.close()
+            thread = Thread(target=handle_connection, args=(conn, addr))
+            thread.run()
 
-if __name__ == "__main__":
-    main()
+start_server()
+#start_threaded_server()
