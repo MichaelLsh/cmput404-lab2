@@ -14,4 +14,4 @@ Question 5: What is returned by recv() from the server after it is done sending 
 - If no error occurs, recv() returns the number of bytes received and the buffer pointed to by the buf parameter will contain this data received. If the connection has been gracefully closed, the return value is zero. 
 
 Question 6: Provide a link to your code on GitHub.
--  
+-  https://github.com/MichaelLsh/cmput404-lab2
